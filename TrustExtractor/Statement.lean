@@ -202,9 +202,11 @@ type of each parent projection at the structure's parameters, printed as signatu
 anything else, and for a structure that extends nothing. -/
 def parentsJson (name : Name) (withRefs : Bool) : MetaM (Option Json) := do
   let env ← getEnv
-  let parents := getStructureParentInfo env name
+  -- `getStructureInfo?`, not `getStructureParentInfo`, which panics on anything but a structure.
+  let some structInfo := getStructureInfo? env name | return none
+  let parents := structInfo.parentInfo
   let some info := env.find? name | return none
-  if !isStructure env name || parents.isEmpty then return none
+  if parents.isEmpty then return none
   let us := info.levelParams.map mkLevelParam
   forallTelescopeReducing info.type fun params _ =>
     withLocalDeclD `self (mkAppN (mkConst name us) params) fun s => do
